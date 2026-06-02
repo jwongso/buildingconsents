@@ -2,17 +2,27 @@
 
 from __future__ import annotations
 
+import threading
 from functools import lru_cache
 
 import geopandas as gpd
 from shapely.geometry import Point
 
-from app.councils import Council, councils_for_point
+from app.councils import COUNCILS, Council, councils_for_point
 
 
 @lru_cache(maxsize=16)
 def _load(zones_file: str) -> gpd.GeoDataFrame:
     return gpd.read_file(zones_file).to_crs(epsg=4326)
+
+
+def prewarm_zones() -> None:
+    """Load all council zone files into the lru_cache in a background thread."""
+    def _load_all():
+        for council in COUNCILS:
+            if council.zones_file.exists():
+                _load(str(council.zones_file))
+    threading.Thread(target=_load_all, daemon=True, name="zone-prewarm").start()
 
 
 def lookup_zone(lat: float, lng: float) -> dict | None:
@@ -26,7 +36,12 @@ def lookup_zone(lat: float, lng: float) -> dict | None:
         if not council.zones_file.exists():
             continue
         gdf = _load(str(council.zones_file))
-        match = gdf[gdf.geometry.contains(pt)]
+        # R-tree bbox candidates first (O(log n)), exact check on the tiny subset
+        bbox_idx = list(gdf.sindex.query(pt))
+        if not bbox_idx:
+            continue
+        subset = gdf.iloc[bbox_idx]
+        match = subset[subset.geometry.contains(pt)]
         if not match.empty:
             row = match.iloc[0]
             return {

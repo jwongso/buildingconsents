@@ -11,6 +11,7 @@ from fastapi import Request
 from core.api import create_app
 
 from app.jurisdiction import NZBuildingJurisdiction
+from app.zones import prewarm_zones
 
 _QUESTION_LOG = Path("data/question_log.jsonl")
 
@@ -18,6 +19,8 @@ app = create_app(
     NZBuildingJurisdiction(),
     static_dir=Path(__file__).parent / "static",
 )
+
+prewarm_zones()
 
 
 @app.middleware("http")

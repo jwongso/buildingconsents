@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from functools import lru_cache
+
 import httpx
 
 _NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
@@ -9,6 +11,7 @@ _TIMEOUT = 10
 _HEADERS = {"User-Agent": "buildingconsents.localrun.ai/0.1 (contact: root.aotearoa@gmail.com)"}
 
 
+@lru_cache(maxsize=512)
 def geocode(address: str) -> tuple[float, float] | None:
     """Return (lat, lng) for a NZ address string, or None if not found."""
     try:
