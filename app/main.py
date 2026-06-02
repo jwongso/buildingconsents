@@ -1,6 +1,6 @@
 """Entry point for the NZ Building Consents app."""
 
-from core.app import create_app
+from core.api import create_app
 
 from app.jurisdiction import NZBuildingJurisdiction
 

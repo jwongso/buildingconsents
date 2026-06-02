@@ -1,26 +1,27 @@
-"""Address geocoding via LINZ Address API (free, NZ-only, no key required)."""
+"""Address geocoding via Nominatim (OpenStreetMap) - free, no key required."""
 
 from __future__ import annotations
 
 import httpx
 
-_LINZ_URL = "https://api.linz.govt.nz/v1/search/address"
+_NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 _TIMEOUT = 10
+_HEADERS = {"User-Agent": "buildingconsents.localrun.ai/0.1 (contact: root.aotearoa@gmail.com)"}
 
 
 def geocode(address: str) -> tuple[float, float] | None:
     """Return (lat, lng) for a NZ address string, or None if not found."""
     try:
         r = httpx.get(
-            _LINZ_URL,
-            params={"q": address, "limit": 1},
+            _NOMINATIM_URL,
+            params={"q": address, "format": "json", "limit": 1, "countrycodes": "nz"},
+            headers=_HEADERS,
             timeout=_TIMEOUT,
         )
         r.raise_for_status()
-        features = r.json().get("features", [])
-        if not features:
+        results = r.json()
+        if not results:
             return None
-        coords = features[0]["geometry"]["coordinates"]  # [lng, lat]
-        return coords[1], coords[0]
+        return float(results[0]["lat"]), float(results[0]["lon"])
     except Exception:
         return None
