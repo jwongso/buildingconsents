@@ -54,6 +54,12 @@ COUNCILS: list[Council] = [
         zones_file=_DATA / "dunedin" / "ddp_zones.geojson",
         bbox=(-46.10, -45.60, 170.20, 170.80),
     ),
+    Council(
+        name="waipa",
+        display_name="Waipa District",
+        zones_file=_DATA / "waipa" / "wdp_zones.geojson",
+        bbox=(-38.20, -37.76, 175.05, 175.66),
+    ),
 ]
 
 

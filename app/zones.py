@@ -44,9 +44,12 @@ def lookup_zone(lat: float, lng: float) -> dict | None:
         match = subset[subset.geometry.contains(pt)]
         if not match.empty:
             row = match.iloc[0]
+            # Field names vary by council: ZONE_NAME (Auckland/Hamilton) or Zone (Waipa)
+            zone_name = str(row.get("ZONE_NAME") or row.get("Zone") or "").strip()
+            zone_code = str(row.get("ZONE_CODE") or row.get("Reference") or "").strip()
             return {
-                "zone_code": str(row.get("ZONE_CODE", "")),
-                "zone_name": str(row.get("ZONE_NAME", "")),
+                "zone_code": zone_code,
+                "zone_name": zone_name,
                 "council": council.display_name,
             }
 
