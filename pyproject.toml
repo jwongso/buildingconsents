@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "buildingconsents"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "astraea",
+    "geopandas>=1.0",
+    "shapely>=2.0",
+    "httpx>=0.27",
+    "fastapi>=0.111",
+    "uvicorn>=0.30",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-asyncio>=0.23", "httpx"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*", "ingest*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
