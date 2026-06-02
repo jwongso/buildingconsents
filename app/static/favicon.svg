@@ -1,8 +1,6 @@
 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="32" height="32" rx="6" fill="#1a2e5a"/>
-  <!-- house outline -->
-  <polygon points="16,5 28,16 25,16 25,27 19,27 19,20 13,20 13,27 7,27 7,16 4,16" stroke="#e8a020" stroke-width="1.6" fill="none" stroke-linejoin="round"/>
-  <!-- permit/tick badge -->
-  <circle cx="24" cy="24" r="5" fill="#1a2e5a" stroke="#e8a020" stroke-width="1.2"/>
-  <polyline points="21.5,24 23,25.5 26.5,22" stroke="#e8a020" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect width="32" height="32" rx="6" fill="#f5a623"/>
+  <polygon points="16,5 28,16 25,16 25,27 19,27 19,20 13,20 13,27 7,27 7,16 4,16" stroke="#1a1a1a" stroke-width="1.6" fill="none" stroke-linejoin="round"/>
+  <circle cx="24" cy="24" r="5" fill="#f5a623" stroke="#1a1a1a" stroke-width="1.2"/>
+  <polyline points="21.5,24 23,25.5 26.5,22" stroke="#1a1a1a" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

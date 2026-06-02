@@ -350,7 +350,7 @@ function renderConfidence(ev) {
 function _resetArtifact(question, strategy) {
   _artifact = {
     question, strategy,
-    irac: document.getElementById('irac-toggle').checked,
+    irac: false,
     debug_mode: _debugMode,
     ts_start: new Date().toISOString(), ts_end: null,
     user_agent: navigator.userAgent,
@@ -491,7 +491,7 @@ form.addEventListener('submit', async (e) => {
         session_id: _getSessionId(),
         debug_key: _debugKey,
         strategy: 'vector',
-        irac: document.getElementById('irac-toggle').checked,
+        irac: false,
       }),
     });
   } catch (_) {
