@@ -196,6 +196,20 @@ Environment variables required in the service unit:
 
 ---
 
+## Statute routing
+
+Keyword routes force EBWO2020 and BA2004 sections into the retrieval pool for
+common building types, ensuring the LLM always sees the correct exemption thresholds:
+
+| Route | Keywords | Forced sections |
+|-------|----------|-----------------|
+| carport-exemption | carport, car port, garage | EBWO2020/s11, s18A, BA2004/s41 |
+| detached-building-sleepout | sleepout, granny flat, kitset, prefab | EBWO2020/s3A, s3B, s43, BA2004/s41 |
+| shed-barn | shed, pole shed, barn, rural | EBWO2020/s4A, s49, BA2004/s41 |
+| deck-porch-veranda | deck, porch, veranda, pergola | EBWO2020/s9, s17A, BA2004/s41 |
+| awning | awning, shade sail, canopy | EBWO2020/s7, s8, s16A, BA2004/s41 |
+| schedule-1-exempt-overview | schedule 1, exempt work | BA2004/s41 |
+
 ## Tests
 
 ```bash
@@ -206,7 +220,27 @@ pytest tests/test_zone.py -v
 pytest -v
 ```
 
+Test files:
+- `test_zone.py` - 8 zone lookup unit tests, all 6 councils
+- `test_api.py` - health, token, zone endpoint, retrieve, ask/stream
+- `test_smoke.py` - 10 retrieval smoke tests covering BA2004 and EBWO2020 route injection
+
 ---
+
+## Feedback and question logs
+
+Every ask/stream request includes `feedback_context: true`, so the server always
+emits a `context_debug` SSE event containing the rewritten query, retrieved chunk
+previews, anchor sections, and token budget. This is stored in the feedback artifact
+without requiring debug mode.
+
+On thumbs-down, `/feedback/full` is called immediately with the complete artifact:
+question, answer, sources, legislation, confidence, context_debug, and timing.
+
+Logs:
+- `data/question_log.jsonl` - timestamp and question for every ask
+- `data/feedback.jsonl` - simple rating + question for quick review
+- `data/feedback_full.jsonl` - complete artifact for analysis
 
 ## Disclaimer
 

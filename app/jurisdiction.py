@@ -8,6 +8,69 @@ from pydantic import BaseModel
 from core.jurisdiction import CorpusConfig, JurisdictionBase, SmokeFixture
 from core.routing import StatuteRoute
 
+_ROUTES: list[StatuteRoute] = [
+    StatuteRoute(
+        intent="carport-exemption",
+        include_any=("carport", "car port", "covered parking", "garage"),
+        forced_sections=(
+            "NZLEG/EBWO2020/s11",
+            "NZLEG/EBWO2020/s18A",
+            "NZLEG/BA2004/s41",
+        ),
+        synthetic_query="carport exempt building work schedule 1 area height",
+    ),
+    StatuteRoute(
+        intent="detached-building-sleepout",
+        include_any=("sleepout", "sleep out", "detached building", "outbuilding", "granny flat", "minor dwelling", "kitset", "prefab"),
+        forced_sections=(
+            "NZLEG/EBWO2020/s3A",
+            "NZLEG/EBWO2020/s3B",
+            "NZLEG/EBWO2020/s43",
+            "NZLEG/BA2004/s41",
+        ),
+        synthetic_query="single-storey detached building sleepout exempt 30 square metres lightweight kitset",
+    ),
+    StatuteRoute(
+        intent="shed-barn",
+        include_any=("shed", "pole shed", "barn", "hay barn", "farm building", "rural"),
+        forced_sections=(
+            "NZLEG/EBWO2020/s4A",
+            "NZLEG/EBWO2020/s49",
+            "NZLEG/BA2004/s41",
+        ),
+        synthetic_query="pole shed hay barn rural zone exempt building work",
+    ),
+    StatuteRoute(
+        intent="deck-porch-veranda",
+        include_any=("deck", "porch", "veranda", "verandah", "pergola"),
+        forced_sections=(
+            "NZLEG/EBWO2020/s9",
+            "NZLEG/EBWO2020/s17A",
+            "NZLEG/BA2004/s41",
+        ),
+        synthetic_query="deck porch veranda exempt building work area height above ground",
+    ),
+    StatuteRoute(
+        intent="awning",
+        include_any=("awning", "shade sail", "canopy"),
+        forced_sections=(
+            "NZLEG/EBWO2020/s7",
+            "NZLEG/EBWO2020/s8",
+            "NZLEG/EBWO2020/s16A",
+            "NZLEG/BA2004/s41",
+        ),
+        synthetic_query="awning canopy exempt building work size area",
+    ),
+    StatuteRoute(
+        intent="schedule-1-exempt-overview",
+        include_any=("schedule 1", "exempt work", "exempt building", "exemption"),
+        forced_sections=(
+            "NZLEG/BA2004/s41",
+        ),
+        synthetic_query="schedule 1 exempt building work building act 2004",
+    ),
+]
+
 from app.geocode import geocode
 from app.zones import lookup_zone
 
@@ -52,7 +115,7 @@ If you do not have enough information to answer confidently, say so clearly rath
 
     @property
     def routes(self) -> list[StatuteRoute]:
-        return []
+        return _ROUTES
 
     @property
     def smoke_fixtures(self) -> list[SmokeFixture]:
@@ -71,6 +134,11 @@ If you do not have enough information to answer confidently, say so clearly rath
                 question="What is exempt building work under Schedule 1 of the Building Act?",
                 expected_sections=["NZLEG/BA2004/s41"],
                 description="schedule 1 exempt building work overview",
+            ),
+            SmokeFixture(
+                question="Do I need a building consent for a carport that is 30m2?",
+                expected_sections=["NZLEG/EBWO2020/s11", "NZLEG/BA2004/s41"],
+                description="carport exemption - EBWO2020 route injection",
             ),
         ]
 

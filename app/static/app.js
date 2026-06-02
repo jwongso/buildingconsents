@@ -492,6 +492,7 @@ form.addEventListener('submit', async (e) => {
         debug_key: _debugKey,
         strategy: 'vector',
         irac: false,
+        feedback_context: true,
       }),
     });
   } catch (_) {
