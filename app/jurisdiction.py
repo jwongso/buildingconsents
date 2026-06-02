@@ -21,7 +21,7 @@ _ROUTES: list[StatuteRoute] = [
     ),
     StatuteRoute(
         intent="detached-building-sleepout",
-        include_any=("sleepout", "sleep out", "detached building", "outbuilding", "granny flat", "minor dwelling", "kitset", "prefab"),
+        include_any=("sleepout", "sleep out", "detached building", "outbuilding", "kitset", "prefab"),
         forced_sections=(
             "NZLEG/EBWO2020/s3A",
             "NZLEG/EBWO2020/s3B",
@@ -29,6 +29,16 @@ _ROUTES: list[StatuteRoute] = [
             "NZLEG/BA2004/s41",
         ),
         synthetic_query="single-storey detached building sleepout exempt 30 square metres lightweight kitset",
+    ),
+    StatuteRoute(
+        intent="granny-flat-standalone",
+        include_any=("granny flat", "minor dwelling", "secondary dwelling", "standalone dwelling", "small standalone"),
+        forced_sections=(
+            "NZLEG/BA2004/s41",
+            "NZLEG/EBWO2020/s3A",
+            "NZLEG/EBWO2020/s3B",
+        ),
+        synthetic_query="granny flat standalone dwelling 70 square metres exempt consent single storey",
     ),
     StatuteRoute(
         intent="shed-barn",
@@ -68,6 +78,17 @@ _ROUTES: list[StatuteRoute] = [
             "NZLEG/BA2004/s41",
         ),
         synthetic_query="schedule 1 exempt building work building act 2004",
+    ),
+    StatuteRoute(
+        intent="certificate-of-acceptance",
+        include_any=("certificate of acceptance", "unconsented", "without consent", "retrospective consent", "urgent work", "notice to fix"),
+        forced_sections=(
+            "NZLEG/BA2004/s96",
+            "NZLEG/BA2004/s97",
+            "NZLEG/BA2004/s98",
+            "NZLEG/BA2004/s99",
+        ),
+        synthetic_query="certificate of acceptance unconsented building work territorial authority application",
     ),
     StatuteRoute(
         intent="swimming-pool",
@@ -122,6 +143,27 @@ make informed decisions or know when to seek professional help.
 
 When zone information is provided in the question context, use it to give zone-specific answers
 about height limits, setback rules, site coverage, and permitted activities.
+
+Key thresholds and rules you must apply accurately (source: MBIE building.govt.nz):
+- ALL swimming pools and their associated fences require a building consent, no exceptions.
+- Retaining walls over 1.5 m high require consent (3.0 m in rural areas if designed by a CPEng).
+- Fences or walls over 2.5 m high require consent.
+- Decks, platforms or bridges more than 1.5 m above ground level require consent.
+- Woodburners and air-conditioning systems require consent.
+- Sheds over 30 m2 require consent. Sheds between 10-30 m2 are exempt only if built with
+  lightweight material (B1/AS1) OR carried out or supervised by an LBP or CPEng.
+- Structural building work (additions, alterations, re-piling, some demolitions) requires consent.
+- Plumbing and drainage where an additional sanitary fixture is created requires consent.
+- Relocating a building requires consent.
+- Granny flats (small standalone dwellings) up to 70 m2 are exempt from building consent if:
+  the dwelling is standalone, wholly new (not an addition/alteration), single storey, and
+  floor area is 70 m2 or less. Records of Work from LBPs must still be collected and submitted.
+- If consent status is uncertain, refer users to canibuildit.govt.nz or their local council.
+- Carrying out unconsented work that is not exempt is an offence; fines up to $200,000 plus
+  $10,000 per day for continuing offences.
+
+Certificate of acceptance: if building work was done without consent (urgent or retrospective),
+the owner must apply to the territorial authority for a certificate of acceptance (s96-s99, BA2004).
 
 If you do not have enough information to answer confidently, say so clearly rather than guessing."""
 
