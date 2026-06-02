@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from core.jurisdiction import CorpusConfig, JurisdictionBase
+from core.jurisdiction import CorpusConfig, JurisdictionBase, SmokeFixture
 from core.routing import StatuteRoute
 
 from app.geocode import geocode
@@ -53,6 +53,42 @@ If you do not have enough information to answer confidently, say so clearly rath
     @property
     def routes(self) -> list[StatuteRoute]:
         return []
+
+    @property
+    def smoke_fixtures(self) -> list[SmokeFixture]:
+        return [
+            SmokeFixture(
+                question="I want to build a 15m2 sleepout in my backyard. Do I need a building consent?",
+                expected_sections=["NZLEG/BA2004/s41", "NZLEG/BA2004/s43"],
+                description="exempt work - single-storey detached building under 30m2",
+            ),
+            SmokeFixture(
+                question="Do I need a building consent to build a deck that is 100m2 and 800mm above ground?",
+                expected_sections=["NZLEG/BA2004/s41"],
+                description="exempt work - deck height and area threshold",
+            ),
+            SmokeFixture(
+                question="What is exempt building work under Schedule 1 of the Building Act?",
+                expected_sections=["NZLEG/BA2004/s41"],
+                description="schedule 1 exempt building work overview",
+            ),
+        ]
+
+    def preprocess_question(self, question: str, **context) -> str:
+        address = context.get("address")
+        if not address:
+            return question
+        coords = geocode(address)
+        if not coords:
+            return question
+        lat, lng = coords
+        zone = lookup_zone(lat, lng)
+        if not zone:
+            return question
+        zone_ctx = (
+            f"[Zone context: '{address}' is in {zone['council']} zone '{zone['zone_name']}']\n\n"
+        )
+        return zone_ctx + question
 
     def get_scraper(self):
         raise NotImplementedError("Use ingest/leg_pipeline.py to populate the corpus.")

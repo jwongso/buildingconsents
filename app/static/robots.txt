@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /ask/
+Disallow: /retrieve
+Disallow: /feedback

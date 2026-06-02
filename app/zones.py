@@ -30,7 +30,7 @@ def lookup_zone(lat: float, lng: float) -> dict | None:
         if not match.empty:
             row = match.iloc[0]
             return {
-                "zone_code": int(row.get("ZONE_CODE", 0)),
+                "zone_code": str(row.get("ZONE_CODE", "")),
                 "zone_name": str(row.get("ZONE_NAME", "")),
                 "council": council.display_name,
             }
