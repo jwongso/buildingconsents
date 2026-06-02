@@ -11,6 +11,17 @@ from shapely.geometry import Point
 from app.councils import COUNCILS, Council, councils_for_point
 
 
+def _field(row, *names: str) -> str:
+    """Return the first non-empty, non-NaN value from the given field names."""
+    for name in names:
+        val = row.get(name)
+        if val is not None:
+            s = str(val).strip()
+            if s and s.lower() != "nan":
+                return s
+    return ""
+
+
 @lru_cache(maxsize=16)
 def _load(zones_file: str) -> gpd.GeoDataFrame:
     return gpd.read_file(zones_file).to_crs(epsg=4326)
@@ -44,12 +55,9 @@ def lookup_zone(lat: float, lng: float) -> dict | None:
         match = subset[subset.geometry.contains(pt)]
         if not match.empty:
             row = match.iloc[0]
-            # Field names vary by council: ZONE_NAME (Auckland/Hamilton) or Zone (Waipa)
-            zone_name = str(row.get("ZONE_NAME") or row.get("Zone") or "").strip()
-            zone_code = str(row.get("ZONE_CODE") or row.get("Reference") or "").strip()
             return {
-                "zone_code": zone_code,
-                "zone_name": zone_name,
+                "zone_code": _field(row, "ZONE_CODE", "Reference", "Code"),
+                "zone_name": _field(row, "ZONE_NAME", "Zone", "ZONE", "Description"),
                 "council": council.display_name,
             }
 

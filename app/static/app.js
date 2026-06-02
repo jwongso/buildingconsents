@@ -265,9 +265,10 @@ function renderAnswer(text) {
   if (idx !== -1) text = text.substring(0, idx);
   text = escapeHtml(text.trim());
   const html = text.split(/\n{2,}/).map(para => {
+    if (/^---+$/.test(para.trim())) return '<hr>';
     const lines = para.split('\n');
-    const h = lines[0].match(/^(#{1,3}) (.+)/);
-    if (h) return `<h${h[1].length + 2}>${h[2]}</h${h[1].length + 2}>`;
+    const h = lines[0].match(/^(#{1,4}) (.+)/);
+    if (h) return `<h${Math.min(h[1].length + 2, 6)}>${h[2]}</h${Math.min(h[1].length + 2, 6)}>`;
     if (lines.some(l => /^[-*] /.test(l.trim()))) {
       const items = []; let cur = null;
       for (const l of lines) {
@@ -303,7 +304,11 @@ function renderAnswer(text) {
   }).join('');
   return html
     .replace(/\[S(\d+)\]/g, '<a href="#ctx-S$1" class="citation-link" data-source="S$1">[S$1]</a>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\b(https?:\/\/[^\s<>"]+|(?:www\.|canibuildit|building)\.[\w./?=#%-]+)/g, url => {
+      const href = url.startsWith('http') ? url : 'https://' + url;
+      return `<a href="${href}" target="_blank" rel="noopener">${url}</a>`;
+    });
 }
 
 document.addEventListener('click', e => {

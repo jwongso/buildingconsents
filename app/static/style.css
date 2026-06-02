@@ -440,7 +440,10 @@ textarea:focus {
 
 .answer-body li { margin: 4px 0; }
 
-.answer-body strong { color: var(--primary-dark); }
+.answer-body strong { color: #1a1a1a; }
+.answer-body a { color: var(--primary); text-decoration: underline; }
+.answer-body a:hover { color: var(--primary-dark); }
+.answer-body hr { border: none; border-top: 1px solid #e0d0a0; margin: 12px 0; }
 
 .answer-table {
   width: 100%;

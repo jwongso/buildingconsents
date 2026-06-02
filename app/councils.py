@@ -60,6 +60,18 @@ COUNCILS: list[Council] = [
         zones_file=_DATA / "waipa" / "wdp_zones.geojson",
         bbox=(-38.20, -37.76, 175.05, 175.66),
     ),
+    Council(
+        name="palmerston_north",
+        display_name="Palmerston North",
+        zones_file=_DATA / "palmerston_north" / "pncc_zones.geojson",
+        bbox=(-40.53, -40.24, 175.49, 175.80),
+    ),
+    Council(
+        name="rotorua",
+        display_name="Rotorua",
+        zones_file=_DATA / "rotorua" / "rdc_zones.geojson",
+        bbox=(-38.57, -37.93, 175.98, 176.62),
+    ),
 ]
 
 
