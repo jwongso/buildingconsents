@@ -12,9 +12,12 @@ Built on [Astraea](https://github.com/jwongso/astraea) - an open-justice RAG fra
 ## What it does
 
 - Answers building consent questions using retrieval-augmented generation (RAG) over
-  the Building Act 2004, Resource Management Act 1991, and related MBIE guidance.
-- Accepts an optional property address and prepends the zone context (council, zone
+  the Building Act 2004, Building (Exempt Building Work) Order 2020 (EBWO2020),
+  Resource Management Act 1991, and related MBIE guidance.
+- Accepts an optional property address and prepends the planning zone (council, zone
   name, zone code) to the question before retrieval and generation.
+- Zone context prefix is stripped before the rewriter so it biases LLM generation
+  toward zone-specific answers without polluting vector retrieval with RMA sections.
 - Exposes a `/zone` endpoint that geocodes an NZ address and returns its planning zone.
 
 ## Council zone coverage
@@ -27,6 +30,13 @@ Built on [Astraea](https://github.com/jwongso/astraea) - an open-justice RAG fra
 | Hamilton | Hamilton District Plan | ~2,400 |
 | Tauranga | Tauranga District Plan | ~2,700 |
 | Dunedin | Dunedin District Plan | ~200 |
+| Waipa District (Cambridge, Te Awamutu) | Waipa District Plan | 1,339 |
+| Palmerston North | PNCC District Plan | 1,422 |
+| Rotorua | Rotorua District Plan | 1,893 |
+
+Zone data uses different field naming conventions per council. `zones.py` resolves
+`ZONE_NAME` / `Zone` / `ZONE` / `Description` for zone name and `ZONE_CODE` /
+`Reference` / `Code` for zone code in priority order, stripping NaN values.
 
 More cities by request - email admin@localrun.ai.
 
@@ -36,24 +46,34 @@ More cities by request - email admin@localrun.ai.
 
 ```
 app/
-  main.py          - FastAPI app factory (Astraea create_app)
-  jurisdiction.py  - NZBuildingJurisdiction: system prompt, corpus config, /zone route
-  zones.py         - GeoJSON zone loader + point-in-polygon lookup (Shapely/GeoPandas)
-  geocode.py       - Address -> (lat, lng) via Nominatim (OSM)
-  councils.py      - Council registry: name, GeoJSON path, display label
+  main.py          - FastAPI app factory (Astraea create_app) + question log middleware
+  jurisdiction.py  - NZBuildingJurisdiction: corpus config, statute routes, /zone route
+  zones.py         - GeoJSON zone loader + R-tree point-in-polygon lookup (GeoPandas)
+  geocode.py       - Address -> (lat, lng) via Nominatim (OSM), LRU-cached
+  councils.py      - Council registry: name, display label, GeoJSON path, bbox
   static/          - Frontend (HTML/CSS/JS, SSE streaming)
+    index.html     - Single-page app, 9-council coverage grid
+    app.js         - SSE client, markdown renderer (tables, HR, autolinks)
+    style.css      - Amber/yellow theme
 ingest/
-  leg_pipeline.py  - Legislation ingestion into Qdrant
-  download_zones.py - Paginated ArcGIS REST API downloader for all councils
-  download_aup_zones.py - Auckland Unitary Plan zone downloader
+  leg_pipeline.py        - Legislation ingestion into Qdrant (nz_building_leg)
+  download_zones.py      - Paginated ArcGIS REST API downloader
+  download_aup_zones.py  - Auckland Unitary Plan zone downloader
 data/
   zones/           - GeoJSON files per council (not in git - download separately)
-  raw/leg/         - Raw legislation XML (not in git)
+    auckland/      - aup_zones.geojson
+    waipa/         - wdp_zones.geojson  (Waikato LASS open data)
+    palmerston_north/ - pncc_zones.geojson  (geosite.pncc.govt.nz REST API)
+    rotorua/       - rdc_zones.geojson  (gis.rdc.govt.nz layer 355)
+    ...
+  question_log.jsonl   - Every question with timestamp
+  feedback.jsonl       - Thumbs up/down ratings
+  feedback_full.jsonl  - Full feedback artifact including context_debug
 tests/
   conftest.py      - Shared fixtures (app_client, jurisdiction, skip_no_qdrant)
   test_zone.py     - Zone lookup unit tests (no network or Qdrant required)
   test_api.py      - API integration tests
-  test_smoke.py    - Legislation retrieval smoke tests
+  test_smoke.py    - Legislation retrieval smoke tests (18 tests)
 ```
 
 ---
@@ -64,6 +84,7 @@ tests/
 
 - Python 3.11+
 - [Qdrant](https://qdrant.tech/) running on `localhost:6333`
+- Redis running on `localhost:6379`
 - Astraea core installed: `pip install -e /path/to/astraea`
 
 ### Install
@@ -76,21 +97,16 @@ pip install -e ".[dev]"
 
 ### Download zone data
 
-Zone GeoJSON files are large and not committed to git. Download them with:
+Zone GeoJSON files are large and not committed to git. Download with:
 
 ```bash
-# All councils
-python ingest/download_zones.py
-
-# Single council
-python ingest/download_zones.py wellington
+python ingest/download_zones.py          # all standard councils
+python ingest/download_aup_zones.py      # Auckland (separate, larger dataset)
 ```
 
-Auckland zones use a separate script (larger dataset, different API):
-
-```bash
-python ingest/download_aup_zones.py
-```
+Waipa, Palmerston North, and Rotorua are downloaded from their own REST APIs -
+see `data/zones/*/` for the source URLs and the `Add ... zone coverage` commits
+for the exact download commands.
 
 ### Ingest legislation
 
@@ -98,7 +114,7 @@ python ingest/download_aup_zones.py
 python ingest/leg_pipeline.py
 ```
 
-This downloads legislation from legislation.govt.nz, chunks it, embeds with a local
+Downloads legislation from legislation.govt.nz, chunks it, embeds with a local
 embedding model, and upserts into Qdrant collection `nz_building_leg`.
 
 ### Run locally
@@ -118,11 +134,9 @@ Get the token from `/token`.
 
 ### `GET /health`
 
-Returns `{"status": "ok"}`.
-
-### `GET /token`
-
-Returns the public API token for frontend use.
+```json
+{"status": "ok", "jurisdiction": "nz-building", "active": 0, "waiting": 0}
+```
 
 ### `POST /zone`
 
@@ -130,123 +144,171 @@ Geocode an NZ address and return its planning zone.
 
 ```json
 // Request
-{"address": "Sky Tower, Auckland"}
+{"address": "31 Scott St Cambridge Waikato"}
 
-// Response (found and in coverage)
+// Response
 {
   "found": true,
-  "address": "Sky Tower, Auckland",
-  "lat": -36.8484,
-  "lng": 174.7622,
+  "lat": -37.9065,
+  "lng": 175.4778,
   "zone": {
-    "zone_code": "BUSL",
-    "zone_name": "Business - Local Centre Zone",
-    "council": "Auckland"
+    "zone_code": "",
+    "zone_name": "MEDIUM DENSITY RESIDENTIAL ZONE",
+    "council": "Waipa District"
   }
 }
 ```
 
 ### `POST /retrieve`
 
-Retrieve relevant legislation chunks for a question.
+Retrieve legislation chunks for a question without LLM generation.
 
 ```json
-// Request
 {"question": "Do I need a building consent for a sleepout?", "top_k": 5}
-
-// Response: list of chunk objects with section IDs and scores
 ```
 
 ### `POST /ask/stream`
 
-Stream an answer as Server-Sent Events (SSE).
+Stream an answer as Server-Sent Events. All requests include `feedback_context: true`
+so context_debug is always emitted (no debug key required).
 
 ```json
-// Request
 {
   "question": "Do I need a building consent for a sleepout?",
-  "address": "123 Queen Street, Auckland"
+  "address": "123 Queen Street, Auckland",
+  "feedback_context": true
 }
 ```
 
-Events: `data: <text fragment>` ... `data: [DONE]`
-
----
-
-## Deployment
-
-The service runs as a systemd user service on a Mac Mini M4 Pro, reverse-proxied
-through a Cloudflare Tunnel to https://buildingconsents.localrun.ai.
-
-```bash
-# Start
-systemctl --user start buildingconsents
-
-# Status / logs
-systemctl --user status buildingconsents
-journalctl --user -u buildingconsents -f
-```
-
-Environment variables required in the service unit:
-
-| Variable | Description |
-|----------|-------------|
-| `PUBLIC_TOKEN` | Bearer token for frontend and REST API access |
-| `ALLOWED_ORIGIN` | CORS origin (e.g. https://buildingconsents.localrun.ai) |
+SSE event types: `queue`, `sources`, `confidence`, `context_debug`, `token`, `done`, `error`
 
 ---
 
 ## Statute routing
 
-Keyword routes force EBWO2020 and BA2004 sections into the retrieval pool for
-common building types, ensuring the LLM always sees the correct exemption thresholds:
+Keyword-triggered routes force EBWO2020 and BA2004 sections into the anchor context,
+ensuring the LLM always sees the correct exemption text regardless of vector retrieval
+quality. The zone context prefix is stripped before the rewriter so zone names do not
+bias vector search toward RMA/planning sections.
 
-| Route | Keywords | Forced sections |
-|-------|----------|-----------------|
-| carport-exemption | carport, car port, garage | EBWO2020/s11, s18A, BA2004/s41 |
-| detached-building-sleepout | sleepout, granny flat, kitset, prefab | EBWO2020/s3A, s3B, s43, BA2004/s41 |
-| shed-barn | shed, pole shed, barn, rural | EBWO2020/s4A, s49, BA2004/s41 |
-| deck-porch-veranda | deck, porch, veranda, pergola | EBWO2020/s9, s17A, BA2004/s41 |
+| Route | Keywords (sample) | Forced anchor sections |
+|-------|-------------------|------------------------|
+| carport-exemption | carport, car port, covered parking | EBWO2020/s11, s18A, BA2004/s41 |
+| garage | garage, workshop, fully enclosed vehicle | EBWO2020/s3A, s3B, BA2004/s41 |
+| shed-barn | shed, pole shed, barn, hay barn, farm building | EBWO2020/s4A, s49, BA2004/s41 |
+| detached-building-sleepout | sleepout, outbuilding, kitset, prefab | EBWO2020/s3A, s3B, s43, BA2004/s41 |
+| granny-flat-standalone | granny flat, minor dwelling, secondary dwelling | EBWO2020/s3A, s3B, BA2004/s41 |
+| deck-porch-veranda | deck, porch, veranda, pergola, elevated | EBWO2020/s9, s17A, BA2004/s41 |
 | awning | awning, shade sail, canopy | EBWO2020/s7, s8, s16A, BA2004/s41 |
-| schedule-1-exempt-overview | schedule 1, exempt work | BA2004/s41 |
+| enclosed-veranda-conservatory | conservatory, sun room, enclosed patio | EBWO2020/s9, BA2004/s41 |
+| swimming-pool | swimming pool, pool, spa, hot tub | BA2004/s23, s162C, s162D, s21A, s41 |
+| solar-panels | solar panel, photovoltaic, ground-mounted solar | EBWO2020/s48, BA2004/s28C, s41 |
+| water-heater | water heater, hot water cylinder, wetback | BA2004/s36, s38, s35, s41 |
+| outdoor-fireplace | outdoor fireplace, pizza oven, bbq, fire pit | EBWO2020/s28A, BA2004/s28A, s41 |
+| plumbing-drainage | plumbing, drain, sanitary, toilet, shower | BA2004/s35, s41 |
+| ground-moisture-barrier | moisture barrier, polythene, underfloor | BA2004/s13A, s41 |
+| interior-alterations | internal wall, load-bearing, structural wall | BA2004/s10, s41 |
+| certificate-of-acceptance | certificate of acceptance, unconsented work | BA2004/s96-s99 |
+| schedule-1-exempt-overview | schedule 1, exempt work, exemption | BA2004/s41 |
+
+---
+
+## Concurrency and queuing
+
+Each app process has an in-process asyncio semaphore (`_MAX_CONCURRENT=1`) with a
+5-slot waiting queue per IP. Additionally, when `LLM_GLOBAL_CONCURRENCY=1` is set,
+all Astraea app processes sharing a Redis instance serialise LLM *generation* through
+a Redis-backed atomic counter (Lua `INCR`-if-below-limit). Vector retrieval and anchor
+lookup still run in parallel across apps.
+
+This prevents a second app (e.g. tenancy + building both active) from silently stacking
+on a `--parallel 1` LLM server. The waiting user sees a `queue` SSE event with position
+and estimated wait instead of a silent 50-second spinner.
+
+To disable and let the LLM handle concurrency (e.g. `--parallel 2`): set
+`LLM_GLOBAL_CONCURRENCY=0` or omit the variable.
+
+---
+
+## Deployment
+
+Runs as a systemd user service on a Mac Mini M4 Pro (48 GB), reverse-proxied through
+a Cloudflare Tunnel.
+
+```bash
+systemctl --user start buildingconsents
+systemctl --user status buildingconsents
+journalctl --user -u buildingconsents -f
+```
+
+### Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PUBLIC_TOKEN` | (required) | Bearer token for API access |
+| `ALLOWED_ORIGIN` | `*` | CORS allowed origin |
+| `LLM_BASE_URL` | `http://localhost:8080/v1` | LLM server endpoint |
+| `LLM_MODEL` | `qwen3` | Model name sent to LLM API |
+| `LLM_MAX_TOKENS` | `2500` | Max tokens per generation |
+| `LLM_GLOBAL_CONCURRENCY` | `0` | Cross-app LLM slot limit (0 = disabled) |
+| `QDRANT_URL` | `http://localhost:6333` | Qdrant endpoint |
+| `REDIS_URL` | `redis://127.0.0.1:6379/0` | Redis for sessions and global LLM lock |
+| `DEBUG_KEY` | (none) | Unlocks debug SSE events |
+
+---
 
 ## Tests
 
 ```bash
-# Zone unit tests (no Qdrant needed)
+# Zone unit tests (no Qdrant or network needed)
 pytest tests/test_zone.py -v
 
-# All tests (Qdrant-dependent tests auto-skip if Qdrant is not running)
+# All tests (Qdrant-dependent tests skip automatically if Qdrant is not running)
 pytest -v
 ```
 
 Test files:
-- `test_zone.py` - 8 zone lookup unit tests, all 6 councils
-- `test_api.py` - health, token, zone endpoint, retrieve, ask/stream
-- `test_smoke.py` - 10 retrieval smoke tests covering BA2004 and EBWO2020 route injection
+
+| File | Tests | Notes |
+|------|-------|-------|
+| `test_zone.py` | 8 | Zone lookup for all 9 councils, no network required |
+| `test_api.py` | ~6 | Health, token, zone API, retrieve, ask/stream |
+| `test_smoke.py` | 18 | Legislation retrieval: BA2004 + EBWO2020 route injection |
 
 ---
 
 ## Feedback and question logs
 
-Every ask/stream request includes `feedback_context: true`, so the server always
-emits a `context_debug` SSE event containing the rewritten query, retrieved chunk
-previews, anchor sections, and token budget. This is stored in the feedback artifact
-without requiring debug mode.
+Every `/ask/stream` request includes `feedback_context: true`, so the server always
+emits a full `context_debug` SSE event (rewritten query, chunk previews with scores,
+anchor sections, token budget). This is stored in the feedback artifact without
+requiring debug mode.
 
-On thumbs-down, `/feedback/full` is called immediately with the complete artifact:
-question, answer, sources, legislation, confidence, context_debug, and timing.
+On thumbs-down, `/feedback/full` is called with the complete artifact.
 
-Logs:
-- `data/question_log.jsonl` - timestamp and question for every ask
-- `data/feedback.jsonl` - simple rating + question for quick review
-- `data/feedback_full.jsonl` - complete artifact for analysis
+| File | Content |
+|------|---------|
+| `data/question_log.jsonl` | Timestamp + question for every ask |
+| `data/feedback.jsonl` | Rating, question, confidence per thumbs vote |
+| `data/feedback_full.jsonl` | Full artifact: question, answer, sources, context_debug |
+
+`context_debug` fields for retrieval diagnosis:
+
+- `original_query` - question after zone prefix injection
+- `rewrite_input` - question with zone prefix stripped (what goes to the rewriter)
+- `rewritten_query` - rewriter output used for vector search
+- `statute_routing` - matched routes, trigger terms, forced sections
+- `anchor.sections` - legislation sections fetched verbatim into context
+- `chunks` - retrieved vector chunks with score, document_id, preview, full_text
+- `budget` - token counts for anchor, chunks, total
+
+---
 
 ## Disclaimer
 
 Zone data is indicative only. District plan boundaries are sourced from council open
-data portals and may not reflect the latest plan changes. Always confirm your zone and
-applicable rules directly with your council before starting any project.
+data portals and may not reflect the latest plan changes. Always confirm your zone
+and applicable rules directly with your council before starting any project.
 
 This tool does not constitute professional advice. Always consult a licensed building
 certifier, chartered professional engineer, or your local council before starting
