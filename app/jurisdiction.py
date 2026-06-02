@@ -9,19 +9,40 @@ from core.jurisdiction import CorpusConfig, JurisdictionBase, SmokeFixture
 from core.routing import StatuteRoute
 
 _ROUTES: list[StatuteRoute] = [
+    # ---- Structures ----
     StatuteRoute(
         intent="carport-exemption",
-        include_any=("carport", "car port", "covered parking", "garage"),
+        include_any=("carport", "car port", "covered parking"),
         forced_sections=(
             "NZLEG/EBWO2020/s11",
             "NZLEG/EBWO2020/s18A",
             "NZLEG/BA2004/s41",
         ),
-        synthetic_query="carport exempt building work schedule 1 area height",
+        synthetic_query="carport exempt building work area height",
+    ),
+    StatuteRoute(
+        intent="garage",
+        include_any=("garage", "workshop", "fully enclosed vehicle"),
+        forced_sections=(
+            "NZLEG/BA2004/s41",
+            "NZLEG/EBWO2020/s3A",
+            "NZLEG/EBWO2020/s3B",
+        ),
+        synthetic_query="garage enclosed building consent exempt detached",
+    ),
+    StatuteRoute(
+        intent="shed-barn",
+        include_any=("shed", "pole shed", "barn", "hay barn", "farm building", "man cave", "chicken coop", "summer house", "cabin"),
+        forced_sections=(
+            "NZLEG/EBWO2020/s4A",
+            "NZLEG/EBWO2020/s49",
+            "NZLEG/BA2004/s41",
+        ),
+        synthetic_query="pole shed hay barn rural zone exempt building work",
     ),
     StatuteRoute(
         intent="detached-building-sleepout",
-        include_any=("sleepout", "sleep out", "detached building", "outbuilding", "kitset", "prefab"),
+        include_any=("sleepout", "sleep out", "outbuilding", "kitset", "prefab"),
         forced_sections=(
             "NZLEG/EBWO2020/s3A",
             "NZLEG/EBWO2020/s3B",
@@ -41,24 +62,14 @@ _ROUTES: list[StatuteRoute] = [
         synthetic_query="granny flat standalone dwelling 70 square metres exempt consent single storey",
     ),
     StatuteRoute(
-        intent="shed-barn",
-        include_any=("shed", "pole shed", "barn", "hay barn", "farm building", "rural"),
-        forced_sections=(
-            "NZLEG/EBWO2020/s4A",
-            "NZLEG/EBWO2020/s49",
-            "NZLEG/BA2004/s41",
-        ),
-        synthetic_query="pole shed hay barn rural zone exempt building work",
-    ),
-    StatuteRoute(
         intent="deck-porch-veranda",
-        include_any=("deck", "porch", "veranda", "verandah", "pergola"),
+        include_any=("deck", "sun deck", "porch", "veranda", "verandah", "pergola", "arbour", "platform", "elevated"),
         forced_sections=(
             "NZLEG/EBWO2020/s9",
             "NZLEG/EBWO2020/s17A",
             "NZLEG/BA2004/s41",
         ),
-        synthetic_query="deck porch veranda exempt building work area height above ground",
+        synthetic_query="deck porch veranda exempt building work area height above ground 1.5 metres",
     ),
     StatuteRoute(
         intent="awning",
@@ -72,13 +83,98 @@ _ROUTES: list[StatuteRoute] = [
         synthetic_query="awning canopy exempt building work size area",
     ),
     StatuteRoute(
-        intent="schedule-1-exempt-overview",
-        include_any=("schedule 1", "exempt work", "exempt building", "exemption"),
+        intent="enclosed-veranda-conservatory",
+        include_any=("closing in", "enclosed veranda", "enclosed patio", "conservatory", "sun room", "sunroom"),
         forced_sections=(
             "NZLEG/BA2004/s41",
+            "NZLEG/EBWO2020/s9",
         ),
-        synthetic_query="schedule 1 exempt building work building act 2004",
+        synthetic_query="closing in veranda patio conservatory enclosure building consent",
     ),
+
+    # ---- Swimming pools ----
+    StatuteRoute(
+        intent="swimming-pool",
+        include_any=("swimming pool", "pool", "spa pool", "spa", "hot tub", "paddling pool"),
+        forced_sections=(
+            "NZLEG/BA2004/s23",
+            "NZLEG/BA2004/s162C",
+            "NZLEG/BA2004/s162D",
+            "NZLEG/BA2004/s21A",
+            "NZLEG/BA2004/s41",
+        ),
+        synthetic_query="swimming pool building consent fencing access restriction residential pool",
+    ),
+
+    # ---- Energy and heating ----
+    StatuteRoute(
+        intent="solar-panels",
+        include_any=("solar panel", "solar cell", "photovoltaic", "pv panel", "solar array", "rooftop solar", "ground-mounted solar"),
+        forced_sections=(
+            "NZLEG/BA2004/s28C",
+            "NZLEG/EBWO2020/s48",
+            "NZLEG/BA2004/s48",
+            "NZLEG/BA2004/s48A",
+            "NZLEG/BA2004/s41",
+        ),
+        synthetic_query="solar panel array ground-mounted roof-mounted exempt building work consent area",
+    ),
+    StatuteRoute(
+        intent="water-heater",
+        include_any=("water heater", "hot water cylinder", "hot water tank", "wetback", "continuous hot water", "instant hot water", "gas water"),
+        forced_sections=(
+            "NZLEG/BA2004/s36",
+            "NZLEG/BA2004/s38",
+            "NZLEG/BA2004/s35",
+            "NZLEG/BA2004/s41",
+        ),
+        synthetic_query="water heater replacement repair exempt plumber building consent",
+    ),
+    StatuteRoute(
+        intent="outdoor-fireplace",
+        include_any=("outdoor fireplace", "pizza oven", "bbq", "barbeque", "fire pit", "outdoor oven", "permanent fireplace"),
+        forced_sections=(
+            "NZLEG/EBWO2020/s28A",
+            "NZLEG/BA2004/s28A",
+            "NZLEG/BA2004/s41",
+        ),
+        synthetic_query="permanent outdoor fireplace oven barbecue exempt building work",
+    ),
+
+    # ---- Plumbing and drainage ----
+    StatuteRoute(
+        intent="plumbing-drainage",
+        include_any=("plumbing", "drain", "drainage", "sanitary", "toilet", "sink", "shower", "waste pipe", "grey water", "gully trap"),
+        forced_sections=(
+            "NZLEG/BA2004/s35",
+            "NZLEG/BA2004/s41",
+        ),
+        synthetic_query="plumbing drainage sanitary alteration exempt authorised drainlayer building consent",
+    ),
+
+    # ---- Ground and subfloor ----
+    StatuteRoute(
+        intent="ground-moisture-barrier",
+        include_any=("ground moisture", "moisture barrier", "polythene", "underfloor", "vapour barrier", "plastic sheet"),
+        forced_sections=(
+            "NZLEG/BA2004/s13A",
+            "NZLEG/BA2004/s41",
+        ),
+        synthetic_query="ground moisture barrier underfloor polythene exempt building work",
+    ),
+
+    # ---- Interior alterations ----
+    StatuteRoute(
+        intent="interior-alterations",
+        include_any=("internal wall", "load-bearing wall", "load bearing", "structural wall", "bracing", "doorway", "interior alteration", "non-residential"),
+        forced_sections=(
+            "NZLEG/BA2004/s10",
+            "NZLEG/BA2004/s41",
+        ),
+        synthetic_query="interior alteration internal wall load-bearing structural building consent",
+    ),
+
+    # ---- Consent process ----
     StatuteRoute(
         intent="certificate-of-acceptance",
         include_any=("certificate of acceptance", "unconsented", "without consent", "retrospective consent", "urgent work", "notice to fix"),
@@ -91,16 +187,12 @@ _ROUTES: list[StatuteRoute] = [
         synthetic_query="certificate of acceptance unconsented building work territorial authority application",
     ),
     StatuteRoute(
-        intent="swimming-pool",
-        include_any=("swimming pool", "pool", "spa pool", "spa", "hot tub"),
+        intent="schedule-1-exempt-overview",
+        include_any=("schedule 1", "exempt work", "exempt building", "exemption"),
         forced_sections=(
-            "NZLEG/BA2004/s23",
-            "NZLEG/BA2004/s162C",
-            "NZLEG/BA2004/s162D",
-            "NZLEG/BA2004/s21A",
             "NZLEG/BA2004/s41",
         ),
-        synthetic_query="swimming pool building consent fencing access restriction residential pool",
+        synthetic_query="schedule 1 exempt building work building act 2004",
     ),
 ]
 
@@ -149,6 +241,9 @@ Key thresholds and rules you must apply accurately (source: MBIE building.govt.n
 - Retaining walls over 1.5 m high require consent (3.0 m in rural areas if designed by a CPEng).
 - Fences or walls over 2.5 m high require consent.
 - Decks, platforms or bridges more than 1.5 m above ground level require consent.
+- Porches and verandas up to 20 m2 are fully exempt. 20-30 m2 are exempt if designed/supervised
+  by a Licensed Building Practitioner. Over 30 m2 requires building consent.
+- Awnings up to 20 m2 are fully exempt. 20-30 m2 require LBP supervision to be exempt.
 - Woodburners and air-conditioning systems require consent.
 - Sheds over 30 m2 require consent. Sheds between 10-30 m2 are exempt only if built with
   lightweight material (B1/AS1) OR carried out or supervised by an LBP or CPEng.
@@ -158,6 +253,16 @@ Key thresholds and rules you must apply accurately (source: MBIE building.govt.n
 - Granny flats (small standalone dwellings) up to 70 m2 are exempt from building consent if:
   the dwelling is standalone, wholly new (not an addition/alteration), single storey, and
   floor area is 70 m2 or less. Records of Work from LBPs must still be collected and submitted.
+- Retaining walls over 1.5 m require consent (3.0 m in rural zones if designed by a CPEng).
+- Fences or walls over 2.5 m high require consent.
+- Windows and exterior doors can be replaced without consent if comparable materials are used.
+- Thermal insulation installation does not require consent.
+- Accessibility alterations (ramps, widened doorways) to an existing home generally do not require consent but must comply with the Building Code.
+- Removing a building element (chimney, cladding, partition) does not require consent if it does not affect structure, fire separation, or a specified system.
+- Private playground equipment on private land does not require consent.
+- General repair and maintenance using comparable materials does not require consent.
+- Ground moisture barriers are exempt work.
+- Penetrations for services (ducting, pipes, wiring) through building components are generally exempt if they don't affect structure or fire separation.
 - If consent status is uncertain, refer users to canibuildit.govt.nz or their local council.
 - Carrying out unconsented work that is not exempt is an offence; fines up to $200,000 plus
   $10,000 per day for continuing offences.
