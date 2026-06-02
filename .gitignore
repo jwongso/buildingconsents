@@ -3,10 +3,11 @@ __pycache__/
 .pytest_cache/
 *.egg-info/
 .env
-data/zones/*.shp
-data/zones/*.dbf
-data/zones/*.prj
-data/zones/*.shx
-data/zones/*.cpg
+data/zones/**/*.geojson
+data/zones/**/*.shp
+data/zones/**/*.dbf
+data/zones/**/*.prj
+data/zones/**/*.shx
+data/zones/**/*.cpg
 data/question_log.jsonl
 data/reports/
