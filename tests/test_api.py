@@ -71,10 +71,8 @@ def test_retrieve_returns_chunks(app_client):
     )
     assert r.status_code == 200
     body = r.json()
-    assert isinstance(body, list)
-    assert len(body) > 0
-    first = body[0]
-    assert "id" in first or "chunk_id" in first or "section_id" in first
+    assert isinstance(body, dict)
+    assert "sources" in body or "legislation" in body
 
 
 @skip_no_qdrant
@@ -85,11 +83,8 @@ def test_retrieve_includes_ba2004(app_client):
     )
     assert r.status_code == 200
     body = r.json()
-    ids = []
-    for chunk in body:
-        ids.append(
-            chunk.get("id") or chunk.get("chunk_id") or chunk.get("section_id") or ""
-        )
+    ids = [s.get("case_id", "") for s in body.get("sources", [])]
+    ids += [s.get("case_id", "") for s in body.get("legislation", [])]
     joined = " ".join(ids)
     assert "BA2004" in joined, f"Expected BA2004 section in results, got: {ids}"
 

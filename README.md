@@ -272,8 +272,8 @@ Test files:
 | File | Tests | Notes |
 |------|-------|-------|
 | `test_zone.py` | 8 | Zone lookup for all 9 councils, no network required |
-| `test_api.py` | ~6 | Health, token, zone API, retrieve, ask/stream |
-| `test_smoke.py` | 18 | Legislation retrieval: BA2004 + EBWO2020 route injection |
+| `test_api.py` | 6 | Health, token, zone API, retrieve (dict shape), ask/stream |
+| `test_smoke.py` | 16 | Legislation retrieval: BA2004 + EBWO2020 route injection |
 
 ---
 

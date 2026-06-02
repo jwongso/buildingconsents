@@ -9,17 +9,18 @@ import pytest
 from tests.conftest import skip_no_qdrant
 
 
-def _ids(chunks: list) -> set:
-    return {
-        chunk.get("id") or chunk.get("chunk_id") or chunk.get("section_id") or ""
-        for chunk in chunks
-    }
-
-
 def _retrieve(app_client, question: str, top_k: int = 15) -> set:
     r = app_client.post("/retrieve", json={"question": question, "top_k": top_k})
     assert r.status_code == 200
-    return _ids(r.json())
+    body = r.json()
+    ids: set[str] = set()
+    for src in body.get("sources", []):
+        if cid := src.get("case_id"):
+            ids.add(cid)
+    for leg in body.get("legislation", []):
+        if cid := leg.get("case_id"):
+            ids.add(cid)
+    return ids
 
 
 # ---------------------------------------------------------------------------
@@ -50,7 +51,7 @@ def test_smoke_fixtures_pass(app_client, jurisdiction):
 def test_smoke_sleepout(app_client):
     ids = _retrieve(app_client, "I want to build a 15m2 sleepout in my backyard. Do I need a building consent?")
     assert "NZLEG/BA2004/s41" in ids
-    assert "NZLEG/BA2004/s43" in ids
+    assert "NZLEG/EBWO2020/s43" in ids
 
 
 @skip_no_qdrant

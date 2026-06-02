@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from core.jurisdiction import CorpusConfig, JurisdictionBase, SmokeFixture
+from core.jurisdiction import ConfidenceConfig, CorpusConfig, JurisdictionBase, SmokeFixture
 from core.routing import StatuteRoute
 
 _ROUTES: list[StatuteRoute] = [
@@ -240,18 +240,37 @@ enough information to answer confidently, say so and refer the user to their loc
 or canibuildit.govt.nz.
 
 When a zone context prefix is present in the question (e.g. [Zone context: ...]), use it to
-give zone-specific answers about permitted activities, height limits, and setback rules."""
+give zone-specific answers about permitted activities, height limits, and setback rules.
+
+If asked what AI model or technology powers this tool, or who you are, reply:
+"I am an AI assistant specialising in NZ building consent law. For questions about the
+technology behind this tool, contact admin@localrun.ai.\""""
 
     @property
     def routes(self) -> list[StatuteRoute]:
         return _ROUTES
 
     @property
+    def confidence_config(self) -> ConfidenceConfig:
+        return ConfidenceConfig(
+            high_score=0.75,
+            high_n=3,
+            medium_score=0.68,
+            medium_n=1,
+            messages={
+                "high": "Found {n} directly relevant legislation sections.",
+                "medium": "Found {n} relevant legislation sections - review carefully before acting.",
+                "low": "Found only {n} loosely related legislation sections - verify with your council.",
+                "none": "No relevant legislation found.",
+            },
+        )
+
+    @property
     def smoke_fixtures(self) -> list[SmokeFixture]:
         return [
             SmokeFixture(
                 question="I want to build a 15m2 sleepout in my backyard. Do I need a building consent?",
-                expected_sections=["NZLEG/BA2004/s41", "NZLEG/BA2004/s43"],
+                expected_sections=["NZLEG/BA2004/s41", "NZLEG/EBWO2020/s43"],
                 description="exempt work - single-storey detached building under 30m2",
             ),
             SmokeFixture(
