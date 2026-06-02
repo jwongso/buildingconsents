@@ -7,7 +7,6 @@ name = "buildingconsents"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
-    "astraea",
     "geopandas>=1.0",
     "shapely>=2.0",
     "httpx>=0.27",

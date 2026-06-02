@@ -1,6 +1,6 @@
 """Entry point for the NZ Building Consents app."""
 
-from astraea.core.app import create_app
+from core.app import create_app
 
 from app.jurisdiction import NZBuildingJurisdiction
 

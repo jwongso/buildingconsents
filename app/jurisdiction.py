@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from astraea.core.jurisdiction import JurisdictionBase, CorpusConfig
+from core.jurisdiction import JurisdictionBase, CorpusConfig
 
 from app.geocode import geocode
 from app.zones import lookup_zone
