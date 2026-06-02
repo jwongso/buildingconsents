@@ -29,7 +29,7 @@ class NZBuildingJurisdiction(JurisdictionBase):
     @property
     def corpus(self) -> CorpusConfig:
         return CorpusConfig(
-            qdrant_collection="nz_building",
+            qdrant_collection="nz_building_leg",
             courts=[],
             leg_collection="nz_building_leg",
         )
