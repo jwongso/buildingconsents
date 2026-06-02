@@ -158,6 +158,17 @@ If you do not have enough information to answer confidently, say so clearly rath
         )
         return zone_ctx + question
 
+    @property
+    def rewrite_prompt(self) -> str:
+        return (
+            "Rewrite the following as a concise formal question optimised for retrieving relevant "
+            "New Zealand building legislation. Focus on the building work type, size, location, and "
+            "the specific legal question (consent required, exempt work, Schedule 1, district plan rules). "
+            "Do not mention tenants, landlords, or tribunal decisions. "
+            "If a zone context prefix is present (e.g. [Zone context: ...]), strip it - do not include it in the rewrite. "
+            "Output only the rewritten question, no explanation, no preamble."
+        )
+
     def get_scraper(self):
         raise NotImplementedError("Use ingest/leg_pipeline.py to populate the corpus.")
 
