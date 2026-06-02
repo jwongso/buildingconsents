@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NZ Building Consents Help - Free Research Tool</title>
   <meta name="description" content="Free NZ building consent and planning zone research. Understand Building Act 2004 requirements, Schedule 1 exemptions, and district plan zoning rules.">
-  <link rel="stylesheet" href="/static/style.css?v=2">
+  <link rel="stylesheet" href="/static/style.css?v=3">
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
   <style>
     .address-row {
@@ -49,28 +49,66 @@
     .coverage-card {
       max-width: 720px;
       margin: 0 auto 20px;
-      padding: 16px 24px;
-      background: #fffbf0;
-      border: 1px solid #f0d080;
+      padding: 18px 22px 14px;
+      background: #fff;
+      border: 1px solid #e8d8a0;
       border-radius: var(--radius);
-      font-size: 0.88rem;
+    }
+    .coverage-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
     }
     .coverage-title {
-      margin: 0 0 10px;
+      margin: 0;
       font-size: 0.95rem;
-      color: var(--primary);
-    }
-    .coverage-list {
-      margin: 0 0 8px;
-      padding-left: 18px;
+      font-weight: 700;
       color: var(--text);
-      line-height: 1.8;
+    }
+    .coverage-count-badge {
+      background: var(--accent);
+      color: #1a1a1a;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 20px;
+      letter-spacing: 0.2px;
+    }
+    .coverage-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    @media (max-width: 520px) {
+      .coverage-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .council-card {
+      background: #fffbf2;
+      border: 1px solid #f0d880;
+      border-left: 3px solid var(--accent);
+      border-radius: 7px;
+      padding: 9px 11px;
+    }
+    .council-name {
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+    .council-plan {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 2px;
+      line-height: 1.3;
     }
     .coverage-more {
       margin: 0;
-      color: #555;
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-align: right;
     }
-    .coverage-more a { color: var(--accent-dark, #c07010); }
+    .coverage-more a { color: var(--primary); font-weight: 600; }
   </style>
 </head>
 <body>
@@ -107,16 +145,37 @@
   </section>
 
   <section class="coverage-card">
-    <h3 class="coverage-title">Zone coverage</h3>
-    <ul class="coverage-list">
-      <li><strong>Auckland</strong> &mdash; Auckland Unitary Plan zones</li>
-      <li><strong>Wellington</strong> &mdash; Wellington District Plan zones</li>
-      <li><strong>Christchurch</strong> &mdash; Christchurch District Plan zones</li>
-      <li><strong>Hamilton</strong> &mdash; Hamilton District Plan zones</li>
-      <li><strong>Tauranga</strong> &mdash; Tauranga District Plan zones</li>
-      <li><strong>Dunedin</strong> &mdash; Dunedin District Plan zones</li>
-    </ul>
-    <p class="coverage-more">More cities by request &mdash; <a href="mailto:admin@localrun.ai">admin@localrun.ai</a></p>
+    <div class="coverage-header">
+      <h3 class="coverage-title">Zone coverage</h3>
+      <span class="coverage-count-badge">6 councils</span>
+    </div>
+    <div class="coverage-grid">
+      <div class="council-card">
+        <div class="council-name">Auckland</div>
+        <div class="council-plan">Auckland Unitary Plan</div>
+      </div>
+      <div class="council-card">
+        <div class="council-name">Wellington</div>
+        <div class="council-plan">Wellington District Plan 2024</div>
+      </div>
+      <div class="council-card">
+        <div class="council-name">Christchurch</div>
+        <div class="council-plan">Christchurch District Plan</div>
+      </div>
+      <div class="council-card">
+        <div class="council-name">Hamilton</div>
+        <div class="council-plan">Hamilton District Plan</div>
+      </div>
+      <div class="council-card">
+        <div class="council-name">Tauranga</div>
+        <div class="council-plan">Tauranga District Plan</div>
+      </div>
+      <div class="council-card">
+        <div class="council-name">Dunedin</div>
+        <div class="council-plan">Dunedin District Plan</div>
+      </div>
+    </div>
+    <p class="coverage-more">More cities by request: <a href="mailto:admin@localrun.ai">admin@localrun.ai</a></p>
   </section>
 
   <section class="ask-card">
@@ -237,6 +296,6 @@
   </div>
 </div>
 
-<script src="/static/app.js?v=2"></script>
+<script src="/static/app.js?v=3"></script>
 </body>
 </html>
