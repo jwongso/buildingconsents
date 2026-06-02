@@ -69,6 +69,18 @@ _ROUTES: list[StatuteRoute] = [
         ),
         synthetic_query="schedule 1 exempt building work building act 2004",
     ),
+    StatuteRoute(
+        intent="swimming-pool",
+        include_any=("swimming pool", "pool", "spa pool", "spa", "hot tub"),
+        forced_sections=(
+            "NZLEG/BA2004/s23",
+            "NZLEG/BA2004/s162C",
+            "NZLEG/BA2004/s162D",
+            "NZLEG/BA2004/s21A",
+            "NZLEG/BA2004/s41",
+        ),
+        synthetic_query="swimming pool building consent fencing access restriction residential pool",
+    ),
 ]
 
 from app.geocode import geocode
