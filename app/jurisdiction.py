@@ -69,7 +69,7 @@ _ROUTES: list[StatuteRoute] = [
             "NZLEG/EBWO2020/s17A",
             "NZLEG/BA2004/s41",
         ),
-        synthetic_query="deck porch veranda exempt building work area height above ground 1.5 metres",
+        synthetic_query="deck platform porch veranda elevated structure building consent exempt Schedule 1 height above ground area square metres threshold",
     ),
     StatuteRoute(
         intent="awning",
