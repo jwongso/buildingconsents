@@ -33,6 +33,9 @@ Built on [Astraea](https://github.com/jwongso/astraea) - an open-justice RAG fra
 | Waipa District (Cambridge, Te Awamutu) | Waipa District Plan | 1,339 |
 | Palmerston North | PNCC District Plan | 1,422 |
 | Rotorua | Rotorua District Plan | 1,893 |
+| Nelson | Nelson Resource Management Plan | 898 |
+| Tasman District | Tasman Resource Management Plan | 3,704 |
+| Queenstown-Lakes | Queenstown-Lakes Operative District Plan | 28,292 |
 
 Zone data uses different field naming conventions per council. `zones.py` resolves
 `ZONE_NAME` / `Zone` / `ZONE` / `Description` for zone name and `ZONE_CODE` /
@@ -52,7 +55,7 @@ app/
   geocode.py       - Address -> (lat, lng) via Nominatim (OSM), LRU-cached
   councils.py      - Council registry: name, display label, GeoJSON path, bbox
   static/          - Frontend (HTML/CSS/JS, SSE streaming)
-    index.html     - Single-page app, 9-council coverage grid
+    index.html     - Single-page app, 12-council coverage grid
     app.js         - SSE client, markdown renderer (tables, HR, autolinks)
     style.css      - Amber/yellow theme
 ingest/
@@ -184,6 +187,52 @@ SSE event types: `queue`, `sources`, `confidence`, `context_debug`, `token`, `do
 
 ---
 
+## MCP tool server
+
+The app ships an MCP server so any MCP-capable agent (Claude Code, Claude Desktop,
+OpenClaw) can call it as a tool without knowing anything about RAG or zone lookup.
+
+### Tools
+
+| Tool | Description |
+|---|---|
+| `lookup_building_zone` | Geocode an NZ address, return council + zone name + zone code |
+| `legal_search` | Semantic search over building legislation, returns scored chunks |
+| `legal_ask` | Full RAG answer with section citations |
+| `legal_get_source` | Fetch a legislation section by ID |
+| `legal_get_legislation` | Same as above (alias) |
+
+### Config
+
+Add to `~/.claude.json` (Claude Code) or `~/.claude_desktop_config.json` (Claude Desktop):
+
+```json
+{
+  "mcpServers": {
+    "nz-building": {
+      "command": "python3",
+      "args": ["-m", "mcp_server"],
+      "cwd": "/path/to/buildingconsents"
+    }
+  }
+}
+```
+
+### Typical agent workflow
+
+```
+1. lookup_building_zone("31 Scott St, Cambridge")
+   -> {"found": true, "council": "Waipa District", "zone_name": "MEDIUM DENSITY RESIDENTIAL ZONE"}
+
+2. legal_ask("[Zone context: Waipa District MEDIUM DENSITY RESIDENTIAL ZONE]\n\nDo I need a consent for a 20m2 sleepout?")
+   -> {"answer": "...", "sources": [...]}
+```
+
+The agent handles zone lookup and question composition; the MCP server handles
+retrieval, routing, and generation.
+
+---
+
 ## Statute routing
 
 Keyword-triggered routes force EBWO2020 and BA2004 sections into the anchor context,
@@ -271,7 +320,7 @@ Test files:
 
 | File | Tests | Notes |
 |------|-------|-------|
-| `test_zone.py` | 8 | Zone lookup for all 9 councils, no network required |
+| `test_zone.py` | 8 | Zone lookup unit tests, no network required |
 | `test_api.py` | 6 | Health, token, zone API, retrieve (dict shape), ask/stream |
 | `test_smoke.py` | 16 | Legislation retrieval: BA2004 + EBWO2020 route injection |
 
