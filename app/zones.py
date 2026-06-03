@@ -50,9 +50,16 @@ def lookup_zone(lat: float, lng: float) -> dict | None:
         # R-tree bbox candidates first (O(log n)), exact check on the tiny subset
         bbox_idx = list(gdf.sindex.query(pt))
         if not bbox_idx:
+            # Try small buffer to catch points near polygon edges (road gaps)
+            bbox_idx = list(gdf.sindex.query(pt.buffer(0.0003)))
+        if not bbox_idx:
             continue
         subset = gdf.iloc[bbox_idx]
         match = subset[subset.geometry.contains(pt)]
+        if match.empty:
+            # ~30m buffer for road-gap tolerance (point on boundary or road centerline)
+            pt_buf = pt.buffer(0.0003)
+            match = subset[subset.geometry.intersects(pt_buf)]
         if not match.empty:
             row = match.iloc[0]
             return {

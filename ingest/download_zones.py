@@ -56,6 +56,30 @@ COUNCILS = [
         "name_field": "DP_ZONE",
         "where": "1=1",
     },
+    {
+        "name": "nelson",
+        "out_file": "ncc_zones.geojson",
+        "url": "https://www.topofthesouthmaps.co.nz/arcgis/rest/services/TopoftheSouthMaps/MapServer/27/query",
+        "code_field": "ZONES",
+        "name_field": "ZONES",
+        "where": "Council='Nelson City Council'",
+    },
+    {
+        "name": "tasman",
+        "out_file": "tdc_zones.geojson",
+        "url": "https://www.topofthesouthmaps.co.nz/arcgis/rest/services/TopoftheSouthMaps/MapServer/27/query",
+        "code_field": "ZONES",
+        "name_field": "ZONES",
+        "where": "Council='Tasman District Council'",
+    },
+    {
+        "name": "queenstown",
+        "out_file": "qldc_zones.geojson",
+        "url": "https://gis.qldc.govt.nz/server/rest/services/DistrictPlan/Operative_District_Plan/MapServer/37/query",
+        "code_field": "ZONE",
+        "name_field": "Zone_Name",
+        "where": "1=1",
+    },
 ]
 
 _PAGE_SIZE = 1000

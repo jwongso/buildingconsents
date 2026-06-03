@@ -72,6 +72,24 @@ COUNCILS: list[Council] = [
         zones_file=_DATA / "rotorua" / "rdc_zones.geojson",
         bbox=(-38.57, -37.93, 175.98, 176.62),
     ),
+    Council(
+        name="nelson",
+        display_name="Nelson",
+        zones_file=_DATA / "nelson" / "ncc_zones.geojson",
+        bbox=(-41.40, -41.15, 173.10, 173.45),
+    ),
+    Council(
+        name="tasman",
+        display_name="Tasman District",
+        zones_file=_DATA / "tasman" / "tdc_zones.geojson",
+        bbox=(-41.80, -40.55, 172.10, 173.65),
+    ),
+    Council(
+        name="queenstown",
+        display_name="Queenstown-Lakes",
+        zones_file=_DATA / "queenstown" / "qldc_zones.geojson",
+        bbox=(-45.10, -44.35, 168.10, 169.35),
+    ),
 ]
 
 
