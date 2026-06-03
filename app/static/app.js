@@ -398,6 +398,7 @@ form.addEventListener('submit', async (e) => {
         strategy: 'vector',
         irac: false,
         feedback_context: true,
+        user_context: Astraea.getUserContext('nzbc_user_ctx'),
       }),
     });
   } catch (_) {
@@ -475,3 +476,4 @@ _initDebugShortcut();
 pollQueue();
 setInterval(pollQueue, 15000);
 Astraea.initDisclaimer('nzbc_agreed_v1');
+Astraea.initUserContext('nzbc_user_ctx');
