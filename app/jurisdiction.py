@@ -323,6 +323,40 @@ technology behind this tool, contact admin@localrun.ai.\""""
             "Output only the rewritten question, no explanation, no preamble."
         )
 
+    def register_mcp_tools(self, mcp, service) -> None:
+        import json as _json
+        from app.geocode import geocode
+        from app.zones import lookup_zone
+
+        async def lookup_building_zone(address: str) -> str:
+            """Look up the district plan zone for a New Zealand property address.
+
+            Args:
+                address: Full NZ property address, e.g. '123 Main Street, Nelson'.
+
+            Returns JSON: {found, address, council, zone_code, zone_name}
+            """
+            coords = geocode(address)
+            if not coords:
+                return _json.dumps({"found": False, "address": address, "error": "Address not found or outside covered area."})
+            lat, lng = coords
+            zone = lookup_zone(lat, lng)
+            if not zone:
+                return _json.dumps({"found": False, "address": address, "error": "Address is outside covered council boundaries (12 councils)."})
+            return _json.dumps({"found": True, "address": address, **zone})
+
+        mcp.add_tool(
+            lookup_building_zone,
+            name="lookup_building_zone",
+            description=(
+                "Look up the district plan zone for a New Zealand property address. "
+                "Returns council name, zone code, and zone name. "
+                "Covers 12 councils: Auckland, Wellington, Christchurch, Hamilton, Tauranga, "
+                "Dunedin, Waipa, Palmerston North, Rotorua, Nelson, Tasman, Queenstown-Lakes. "
+                "Use this before asking a building consent question to provide zone context."
+            ),
+        )
+
     def get_scraper(self):
         raise NotImplementedError("Use ingest/leg_pipeline.py to populate the corpus.")
 
