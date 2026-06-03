@@ -8,7 +8,7 @@ function _getSessionId() {
   return id;
 }
 
-// ---- Debug mode (Ctrl+Shift+D or #debug) ----
+// ---- Debug mode (#debug or Ctrl+Shift+D) ----
 let _debugKey = '';
 let _debugMode = false;
 
@@ -64,7 +64,6 @@ function _renderDebugPanel(dbg, dbgDone) {
   const existing = document.getElementById('debug-panel');
   if (existing) existing.remove();
   const scores = dbg.scores || [];
-  const maxScore = Math.max(...scores, 0.0001);
   const bars = scores.map((s, i) => {
     const pct = Math.round(s * 100);
     const cls = s >= 0.80 ? 'high' : s >= 0.76 ? 'mid' : 'low';
@@ -91,16 +90,16 @@ function _renderContextDebugPanel(ev, container) {
 
   const sr = ev.statute_routing || {};
   let qHtml = '<div class="ctx-query-block">';
-  qHtml += `<div class="ctx-query-row"><span class="ctx-label">Original query</span><span class="ctx-query-text">${escapeHtml(ev.original_query || '')}</span></div>`;
+  qHtml += `<div class="ctx-query-row"><span class="ctx-label">Original query</span><span class="ctx-query-text">${Astraea.escapeHtml(ev.original_query || '')}</span></div>`;
   if (ev.rewritten_query !== undefined) {
     const changed = ev.rewritten_query && ev.rewritten_query !== ev.original_query;
-    qHtml += `<div class="ctx-query-row"><span class="ctx-label">Rewritten query</span><span class="ctx-query-text${changed ? ' ctx-rewrite-changed' : ''}">${escapeHtml(ev.rewritten_query || ev.original_query || '')}</span></div>`;
+    qHtml += `<div class="ctx-query-row"><span class="ctx-label">Rewritten query</span><span class="ctx-query-text${changed ? ' ctx-rewrite-changed' : ''}">${Astraea.escapeHtml(ev.rewritten_query || ev.original_query || '')}</span></div>`;
     qHtml += `<div class="ctx-query-row"><span class="ctx-label">Rewrite</span><span class="ctx-meta-val">${ev.rewrite_used ? 'yes' : 'no'}</span></div>`;
   }
   if (sr.triggered) {
     const routes = (sr.matched_routes || []).join(', ');
     const injected = (sr.forced_sections || []).join(', ') || 'none';
-    qHtml += `<div class="ctx-query-row"><span class="ctx-label">Statute routing</span><span class="ctx-meta-val ctx-gate-yes">routes: ${escapeHtml(routes)} | injected: ${escapeHtml(injected)}</span></div>`;
+    qHtml += `<div class="ctx-query-row"><span class="ctx-label">Statute routing</span><span class="ctx-meta-val ctx-gate-yes">routes: ${Astraea.escapeHtml(routes)} | injected: ${Astraea.escapeHtml(injected)}</span></div>`;
   }
   qHtml += '</div>';
   const qBlock = document.createElement('div');
@@ -116,7 +115,7 @@ function _renderContextDebugPanel(ev, container) {
     anchor.sections.forEach(s => {
       const card = document.createElement('div');
       card.className = 'ctx-card ctx-card-leg';
-      card.innerHTML = `<div class="ctx-card-header">${escapeHtml(s.document_id || s.title || '')}</div><div class="ctx-card-meta">legislation | ~${s.tokens ?? '?'} tokens</div><div class="ctx-card-preview">${escapeHtml((s.preview || '').slice(0, 400))}</div>`;
+      card.innerHTML = `<div class="ctx-card-header">${Astraea.escapeHtml(s.document_id || s.title || '')}</div><div class="ctx-card-meta">legislation | ~${s.tokens ?? '?'} tokens</div><div class="ctx-card-preview">${Astraea.escapeHtml((s.preview || '').slice(0, 400))}</div>`;
       body.appendChild(card);
     });
   }
@@ -131,7 +130,7 @@ function _renderContextDebugPanel(ev, container) {
       const card = document.createElement('div');
       card.className = 'ctx-card ctx-card-case';
       card.id = `ctx-S${c.source_index}`;
-      card.innerHTML = `<div class="ctx-card-header">[S${c.source_index}] ${escapeHtml(c.document_id || '')}</div><div class="ctx-card-meta">score: ${c.score != null ? c.score.toFixed(4) : 'n/a'} | ~${c.tokens ?? '?'} tokens</div><div class="ctx-card-preview">${escapeHtml((c.preview || '').slice(0, 300))}</div>`;
+      card.innerHTML = `<div class="ctx-card-header">[S${c.source_index}] ${Astraea.escapeHtml(c.document_id || '')}</div><div class="ctx-card-meta">score: ${c.score != null ? c.score.toFixed(4) : 'n/a'} | ~${c.tokens ?? '?'} tokens</div><div class="ctx-card-preview">${Astraea.escapeHtml((c.preview || '').slice(0, 300))}</div>`;
       body.appendChild(card);
     });
   }
@@ -163,7 +162,7 @@ async function lookupZone(address) {
     const data = await r.json();
     if (data.found && data.zone) {
       _currentZone = data.zone;
-      zoneEl.innerHTML = `<span class="zone-badge">${escapeHtml(data.zone.zone_name)} (${escapeHtml(data.zone.zone_code)}) - ${escapeHtml(data.zone.council)}</span>`;
+      zoneEl.innerHTML = `<span class="zone-badge">${Astraea.escapeHtml(data.zone.zone_name)} (${Astraea.escapeHtml(data.zone.zone_code)}) - ${Astraea.escapeHtml(data.zone.council)}</span>`;
     } else if (data.found) {
       zoneEl.innerHTML = '<span class="zone-badge error">Address found but outside covered zones</span>';
     } else {
@@ -174,13 +173,9 @@ async function lookupZone(address) {
   }
 }
 
-// ---- Token ----
+// ---- Token + DOM refs ----
 let _apiToken = '';
-async function _loadToken() {
-  try { const r = await fetch('/token'); _apiToken = (await r.json()).token || ''; } catch (_) {}
-}
 
-// ---- DOM refs ----
 const form = document.getElementById('ask-form');
 const addressEl = document.getElementById('address');
 const questionEl = document.getElementById('question');
@@ -243,124 +238,20 @@ document.querySelectorAll('.example-btn').forEach(btn => {
 
 // ---- Queue polling ----
 async function pollQueue() {
-  try {
-    const r = await fetch('/health');
-    if (!r.ok) return;
-    const d = await r.json();
-    const waiting = d.waiting || 0;
-    if (waiting > 0) {
-      queueNotice.textContent = `${waiting} ${waiting === 1 ? 'person' : 'people'} waiting - ~${d.estimated_wait_seconds || 0}s`;
-      queueNotice.classList.add('visible');
-    } else { queueNotice.classList.remove('visible'); }
-  } catch (_) {}
+  await Astraea.pollQueue(queueNotice);
 }
 
-// ---- Answer rendering ----
-function escapeHtml(str) {
-  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function renderAnswer(text) {
-  const idx = text.lastIndexOf('\n\nSources:');
-  if (idx !== -1) text = text.substring(0, idx);
-  text = escapeHtml(text.trim());
-  const html = text.split(/\n{2,}/).map(para => {
-    if (/^---+$/.test(para.trim())) return '<hr>';
-    const lines = para.split('\n');
-    const h = lines[0].match(/^(#{1,4}) (.+)/);
-    if (h) return `<h${Math.min(h[1].length + 2, 6)}>${h[2]}</h${Math.min(h[1].length + 2, 6)}>`;
-    if (lines.some(l => /^[-*] /.test(l.trim()))) {
-      const items = []; let cur = null;
-      for (const l of lines) {
-        if (/^[-*] /.test(l.trim())) { if (cur !== null) items.push(cur); cur = l.trim().replace(/^[-*] /, ''); }
-        else if (cur !== null && l.trim()) cur += ' ' + l.trim();
-      }
-      if (cur !== null) items.push(cur);
-      return `<ul>${items.map(t => `<li>${t}</li>`).join('')}</ul>`;
-    }
-    if (lines.some(l => /^\d+\. /.test(l.trim()))) {
-      const items = []; let cur = null;
-      for (const l of lines) {
-        const m = l.trim().match(/^(\d+)\. (.*)/);
-        if (m) { if (cur) items.push(cur); cur = { num: m[1], text: m[2] }; }
-        else if (cur && l.trim()) cur.text += ' ' + l.trim();
-      }
-      if (cur) items.push(cur);
-      return `<ol>${items.map(it => `<li value="${it.num}">${it.text}</li>`).join('')}</ol>`;
-    }
-    const tableLines = lines.filter(l => /^\|/.test(l.trim()));
-    if (tableLines.length >= 2) {
-      const sepIdx = tableLines.findIndex(l => /^\|[\s\-|:]+\|/.test(l.trim()) && !/[a-zA-Z0-9]/.test(l));
-      if (sepIdx === 1) {
-        const parseRow = row => row.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
-        const headers = parseRow(tableLines[0]);
-        const dataRows = tableLines.slice(sepIdx + 1);
-        const thead = `<thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>`;
-        const tbody = `<tbody>${dataRows.map(r => `<tr>${parseRow(r).map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>`;
-        return `<table class="answer-table">${thead}${tbody}</table>`;
-      }
-    }
-    return `<p>${lines.join('<br>')}</p>`;
-  }).join('');
-  return html
-    .replace(/\[S(\d+)\]/g, '<a href="#ctx-S$1" class="citation-link" data-source="S$1">[S$1]</a>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\b(https?:\/\/[^\s<>"]+|(?:www\.|canibuildit|building)\.[\w./?=#%-]+)/g, url => {
-      const href = url.startsWith('http') ? url : 'https://' + url;
-      return `<a href="${href}" target="_blank" rel="noopener">${url}</a>`;
-    });
-}
-
-document.addEventListener('click', e => {
-  const link = e.target.closest('.citation-link');
-  if (!link) return;
-  e.preventDefault();
-  const card = document.querySelector(`#ctx-${CSS.escape(link.dataset.source)}`);
-  if (!card) return;
-  const det = card.closest('details');
-  if (det && !det.open) det.open = true;
-  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  card.classList.remove('citation-highlight');
-  void card.offsetWidth;
-  card.classList.add('citation-highlight');
-  setTimeout(() => card.classList.remove('citation-highlight'), 2500);
-});
-
+// ---- Source rendering (building-specific labels) ----
 function renderSources(sources, legislation) {
-  const hasLeg = legislation && legislation.length > 0;
-  const hasDec = sources && sources.length > 0;
-  if (!hasLeg && !hasDec) { sourcesSection.classList.remove('visible'); return; }
-  let html = '';
-  if (hasLeg) {
-    if (hasDec) html += '<div class="sources-group-label">Relevant legislation</div>';
-    html += legislation.map(s => {
-      const url = (s.url || '').startsWith('https://') ? s.url : '#';
-      return `<div class="source-card source-card--leg"><span class="source-num source-num--leg">&sect;</span><div class="source-info"><a class="source-title" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.title || s.case_id)}</a></div></div>`;
-    }).join('');
-  }
-  if (hasDec) {
-    if (hasLeg) html += '<div class="sources-group-label">MBIE guidance</div>';
-    html += sources.map((s, i) => {
-      const label = s.date ? `${s.court_name || 'MBIE'} - ${s.date}` : (s.court_name || 'MBIE Guidance');
-      const url = (s.url || '').startsWith('https://') ? s.url : '#';
-      return `<div class="source-card"><span class="source-num">S${i+1}</span><div class="source-info"><a class="source-title" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a></div></div>`;
-    }).join('');
-  }
-  sourcesList.innerHTML = html;
-  sourcesSection.classList.add('visible');
+  Astraea.renderSources(sources, legislation, {
+    legislationGroupLabel: 'Relevant legislation',
+    decisionGroupLabel: 'MBIE guidance',
+    decisionLabel: 'MBIE Guidance',
+  });
 }
 
 function renderConfidence(ev) {
-  const existing = document.getElementById('confidence-badge');
-  if (existing) existing.remove();
-  if (!ev || !ev.level) return;
-  const badge = document.createElement('div');
-  badge.id = 'confidence-badge';
-  badge.className = `confidence-badge confidence-${ev.level}`;
-  const icons = { high: '●', medium: '◑', low: '○' };
-  badge.innerHTML = `<span class="confidence-icon">${icons[ev.level] || '●'}</span> <span class="confidence-msg">${escapeHtml(ev.message)}</span>`;
-  const warn = resultCard.querySelector('.ai-warning');
-  if (warn) resultCard.insertBefore(badge, warn);
+  Astraea.renderConfidence(ev, resultCard);
 }
 
 // ---- Artifact ----
@@ -374,16 +265,6 @@ function _resetArtifact(question, strategy) {
     answer: '', sources: [], legislation: [],
     confidence: null, debug: null, debug_timing: null, context_debug: null,
   };
-}
-
-async function _saveFullFeedback(payload, rating, comment, isDebug) {
-  try {
-    await fetch('/feedback/full', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-API-Key': _apiToken },
-      body: JSON.stringify({ ...payload, rating, comment: comment || '', is_debug: isDebug || false }),
-    });
-  } catch (_) {}
 }
 
 // ---- Feedback ----
@@ -407,14 +288,14 @@ function submitFeedback(rating) {
   thumbUp.classList.toggle('active', rating === 1);
   thumbDown.classList.toggle('active', rating === -1);
   feedbackComment.style.display = 'block';
-  if (rating === -1) _saveFullFeedback(_artifact, -1, '');
+  if (rating === -1) Astraea.saveFullFeedback(_artifact, -1, '', false, _apiToken);
 }
 
 thumbUp.addEventListener('click', () => submitFeedback(1));
 thumbDown.addEventListener('click', () => submitFeedback(-1));
 document.getElementById('debug-capture').addEventListener('click', async () => {
   const btn = document.getElementById('debug-capture');
-  await _saveFullFeedback(_artifact, 0, '', true);
+  await Astraea.saveFullFeedback(_artifact, 0, '', true, _apiToken);
   btn.classList.add('saved');
   btn.title = 'Debug context saved';
   setTimeout(() => { btn.classList.remove('saved'); btn.title = 'Save debug context for analysis'; }, 2000);
@@ -463,7 +344,7 @@ function showStreamingResult() {
 function finaliseResult(fullText, sources, legislation) {
   _artifact.answer = fullText;
   _artifact.ts_end = new Date().toISOString();
-  answerBody.innerHTML = renderAnswer(fullText);
+  answerBody.innerHTML = Astraea.renderAnswer(fullText);
   renderSources(sources, legislation);
   resetFeedback();
   submitBtn.disabled = false;
@@ -533,59 +414,44 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
   let rawAnswer = '';
   let streamedSources = [];
   let streamedLegislation = [];
   let streamingStarted = false;
 
   try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      let boundary;
-      while ((boundary = buffer.indexOf('\n\n')) !== -1) {
-        const raw = buffer.slice(0, boundary).trim();
-        buffer = buffer.slice(boundary + 2);
-        if (!raw.startsWith('data: ')) continue;
-        let event;
-        try { event = JSON.parse(raw.slice(6)); } catch (_) { continue; }
-
-        if (event.type === 'sources') {
-          streamedSources = event.sources;
-          streamedLegislation = event.legislation || [];
-          _artifact.sources = event.sources || [];
-          _artifact.legislation = event.legislation || [];
-          renderSources(streamedSources, streamedLegislation);
-        } else if (event.type === 'confidence') {
-          _artifact.confidence = { level: event.level, message: event.message };
-          renderConfidence(event);
-        } else if (event.type === 'debug') {
-          _artifact.debug = event;
-          _debugInfo = event;
-        } else if (event.type === 'debug_done') {
-          _artifact.debug_timing = { generate_ms: event.generate_ms, total_ms: event.total_ms };
-          if (_debugInfo) _renderDebugPanel(_debugInfo, event);
-        } else if (event.type === 'queue') {
-          loadingText.textContent = `Position ${event.position} in queue - ~${event.estimated_wait_s}s`;
-        } else if (event.type === 'context_debug') {
-          _artifact.context_debug = event;
-          if (_debugMode) _renderContextDebugPanel(event, resultCard);
-        } else if (event.type === 'token') {
-          if (!streamingStarted) { streamingStarted = true; showStreamingResult(); answerBody.textContent = ''; }
-          rawAnswer += event.text;
-          _artifact.answer = rawAnswer;
-          answerBody.textContent = rawAnswer;
-        } else if (event.type === 'done') {
-          finaliseResult(rawAnswer, streamedSources, streamedLegislation);
-        } else if (event.type === 'error') {
-          showError(event.message || 'An error occurred.'); return;
-        }
+    await Astraea.streamEvents(res, event => {
+      if (event.type === 'sources') {
+        streamedSources = event.sources;
+        streamedLegislation = event.legislation || [];
+        _artifact.sources = event.sources || [];
+        _artifact.legislation = event.legislation || [];
+        renderSources(streamedSources, streamedLegislation);
+      } else if (event.type === 'confidence') {
+        _artifact.confidence = { level: event.level, message: event.message };
+        renderConfidence(event);
+      } else if (event.type === 'debug') {
+        _artifact.debug = event;
+        _debugInfo = event;
+      } else if (event.type === 'debug_done') {
+        _artifact.debug_timing = { generate_ms: event.generate_ms, total_ms: event.total_ms };
+        if (_debugInfo) _renderDebugPanel(_debugInfo, event);
+      } else if (event.type === 'queue') {
+        loadingText.textContent = `Position ${event.position} in queue - ~${event.estimated_wait_s}s`;
+      } else if (event.type === 'context_debug') {
+        _artifact.context_debug = event;
+        if (_debugMode) _renderContextDebugPanel(event, resultCard);
+      } else if (event.type === 'token') {
+        if (!streamingStarted) { streamingStarted = true; showStreamingResult(); answerBody.textContent = ''; }
+        rawAnswer += event.text;
+        _artifact.answer = rawAnswer;
+        answerBody.textContent = rawAnswer;
+      } else if (event.type === 'done') {
+        finaliseResult(rawAnswer, streamedSources, streamedLegislation);
+      } else if (event.type === 'error') {
+        showError(event.message || 'An error occurred.');
       }
-    }
+    });
     if (streamingStarted && rawAnswer) finaliseResult(rawAnswer, streamedSources, streamedLegislation);
   } catch (_) {
     showError('Lost connection while receiving the answer. Please try again.');
@@ -597,22 +463,6 @@ document.getElementById('ask-another-btn').addEventListener('click', resetToForm
 document.getElementById('retry-btn').addEventListener('click', resetToForm);
 
 // ---- Disclaimer ----
-const _AGREED_KEY = 'nzbc_agreed_v1';
-function initDisclaimer() {
-  if (localStorage.getItem(_AGREED_KEY)) return;
-  const modal = document.getElementById('disclaimer-modal');
-  const checkbox = document.getElementById('disclaimer-checkbox');
-  const agreeBtn = document.getElementById('disclaimer-agree');
-  modal.classList.add('visible');
-  document.body.classList.add('modal-open');
-  checkbox.addEventListener('change', () => { agreeBtn.disabled = !checkbox.checked; });
-  agreeBtn.addEventListener('click', () => {
-    localStorage.setItem(_AGREED_KEY, '1');
-    modal.classList.remove('visible');
-    document.body.classList.remove('modal-open');
-  });
-}
-
 document.getElementById('show-terms').addEventListener('click', e => {
   e.preventDefault();
   document.getElementById('disclaimer-modal').classList.add('visible');
@@ -620,8 +470,8 @@ document.getElementById('show-terms').addEventListener('click', e => {
 });
 
 // ---- Init ----
-_loadToken();
+Astraea.loadToken().then(t => { _apiToken = t; });
 _initDebugShortcut();
 pollQueue();
 setInterval(pollQueue, 15000);
-initDisclaimer();
+Astraea.initDisclaimer('nzbc_agreed_v1');
